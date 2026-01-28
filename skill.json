@@ -1,14 +1,16 @@
 {
   "name": "ngrok-unofficial-webhook-skill",
-  "version": "1.0.0",
-  "description": "Ngrok webhook listener — start a public tunnel to receive and process incoming webhooks via the LLM. Routes events to other skills like Zoom RTMS Meeting Assistant.",
+  "version": "1.1.0",
+  "description": "Ngrok webhook listener — start a public tunnel to receive incoming webhooks. Notifies the user via WhatsApp with a list of matching webhook-capable skills to handle each event. Auto-discovers skills that declare webhookEvents in their skill.json.",
   "author": "tanchunsiong",
   "license": "MIT",
+  "repository": "https://github.com/tanchunsiong/ngrok-unofficial-webhook-skill",
   "keywords": [
     "ngrok",
     "webhook",
     "tunnel",
-    "clawdbot"
+    "clawdbot",
+    "notification"
   ],
   "clawdbot": {
     "emoji": "🔗",

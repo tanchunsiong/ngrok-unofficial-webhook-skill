@@ -18,10 +18,15 @@ npm install
 
 Set `NGROK_AUTHTOKEN` in the skill's `.env` file (copy from `.env.example`).
 
-- `NGROK_AUTHTOKEN` — **(required)** ngrok auth token from https://dashboard.ngrok.com
-- `NGROK_DOMAIN` — (optional) stable ngrok domain for consistent URLs
-- `WEBHOOK_PORT` — (optional) local port, default `4040`
-- `WEBHOOK_PATH` — (optional) webhook path, default `/webhook`
+**Required:**
+- `NGROK_AUTHTOKEN` — ngrok auth token from https://dashboard.ngrok.com
+
+**Optional:**
+- `NGROK_DOMAIN` — stable ngrok domain for consistent URLs
+- `WEBHOOK_PORT` — local port (default: `4040`)
+- `WEBHOOK_PATH` — webhook path (default: `/webhook`)
+- `CLAWDBOT_NOTIFY_CHANNEL` — notification channel (default: `whatsapp`)
+- `CLAWDBOT_NOTIFY_TARGET` — phone number / target for notifications
 
 ## Usage
 
@@ -42,9 +47,34 @@ Webhook endpoint: https://xxxx.ngrok-free.app/webhook
 
 Capture the `NGROK_URL` from stderr output to configure external services.
 
-### Reading webhook events
+### What happens when a webhook arrives
 
-The server writes each incoming webhook as a JSON line to **stdout**. Each event contains:
+1. The server immediately responds **200 OK** to the sender
+2. It discovers installed skills that declare `webhookEvents` in their `skill.json`
+3. It sends a WhatsApp notification to the user with:
+   - The event type and payload
+   - A numbered list of matching skills (skills whose `webhookEvents` include this event type)
+   - Other webhook-capable skills
+   - An option to ignore
+4. The user replies with their choice
+
+### Skill discovery
+
+Skills opt into webhook handling by adding `webhookEvents` to their `skill.json`:
+
+```json
+{
+  "clawdbot": {
+    "webhookEvents": ["meeting.rtms_started", "meeting.rtms_stopped"]
+  }
+}
+```
+
+The ngrok skill scans all sibling skill folders for `skill.json` files with this field.
+
+### Stdout output
+
+The server also writes each webhook as a JSON line to **stdout** for process polling:
 
 ```json
 {
@@ -52,23 +82,10 @@ The server writes each incoming webhook as a JSON line to **stdout**. Each event
   "timestamp": "ISO-8601",
   "method": "POST",
   "path": "/webhook",
-  "headers": {},
   "query": {},
   "body": {}
 }
 ```
-
-Poll stdout of the background process to read incoming webhooks.
-
-### Processing webhooks
-
-When a webhook arrives:
-
-1. Read the event from the process stdout
-2. Inspect `body` to determine the event type
-3. Route to the appropriate handler:
-   - **Zoom RTMS** (`event: "meeting.rtms_started"`) → Start the Zoom RTMS Meeting Assistant skill
-   - **Other events** → Ask the user what to do
 
 ### Health check
 
