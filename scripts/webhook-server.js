@@ -47,34 +47,35 @@ function notifyUser(message) {
 }
 
 /**
- * Discover installed skills from the skills directory.
- * Returns array of { name, description, path }.
+ * Discover installed skills that can handle webhooks.
+ * Looks for skill.json with clawdbot.webhookEvents array.
+ * Returns array of { name, description, folder, events }.
  */
-function discoverSkills() {
+function discoverWebhookSkills() {
   const skillsDir = join(__dirname, '..', '..');
   const skills = [];
   try {
     const entries = readdirSync(skillsDir, { withFileTypes: true });
     for (const entry of entries) {
       if (!entry.isDirectory()) continue;
-      // Skip ourselves
       if (entry.name === 'ngrok-unofficial-webhook-skill') continue;
 
-      const skillMd = join(skillsDir, entry.name, 'SKILL.md');
-      if (!existsSync(skillMd)) continue;
+      const skillJsonPath = join(skillsDir, entry.name, 'skill.json');
+      if (!existsSync(skillJsonPath)) continue;
 
-      // Parse frontmatter for name and description
-      const content = readFileSync(skillMd, 'utf-8');
-      const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
-      let name = entry.name;
-      let description = '';
-      if (fmMatch) {
-        const nameMatch = fmMatch[1].match(/^name:\s*(.+)$/m);
-        const descMatch = fmMatch[1].match(/^description:\s*(.+)$/m);
-        if (nameMatch) name = nameMatch[1].trim();
-        if (descMatch) description = descMatch[1].trim();
-      }
-      skills.push({ name, description, folder: entry.name });
+      try {
+        const skillJson = JSON.parse(readFileSync(skillJsonPath, 'utf-8'));
+        const webhookEvents = skillJson.clawdbot?.webhookEvents;
+        if (!webhookEvents || !Array.isArray(webhookEvents) || webhookEvents.length === 0) continue;
+
+        skills.push({
+          name: skillJson.name || entry.name,
+          description: skillJson.description || '',
+          folder: entry.name,
+          emoji: skillJson.clawdbot?.emoji || '📦',
+          events: webhookEvents,
+        });
+      } catch { /* skip malformed skill.json */ }
     }
   } catch (err) {
     console.error('⚠️ Failed to discover skills:', err.message);
@@ -90,14 +91,36 @@ function formatWebhookMessage(event) {
   const eventType = body.event || body.type || body.action || 'unknown';
   const bodyPreview = JSON.stringify(body, null, 2).slice(0, 1000);
 
-  const skills = discoverSkills();
-  let skillList = skills
-    .map((s, i) => `${i + 1}. *${s.name}* — ${s.description.slice(0, 80)}${s.description.length > 80 ? '…' : ''}`)
-    .join('\n');
+  const allSkills = discoverWebhookSkills();
 
-  if (!skillList) {
-    skillList = '_(no skills with SKILL.md found)_';
+  // Split into matching (handles this event type) and other webhook-capable skills
+  const matching = allSkills.filter(s => s.events.some(e => e === eventType || eventType.startsWith(e.replace('*', ''))));
+  const others = allSkills.filter(s => !matching.includes(s));
+
+  let options = '';
+  let idx = 1;
+
+  if (matching.length > 0) {
+    options += `*Matching skills for this event:*\n`;
+    for (const s of matching) {
+      options += `${idx}. ${s.emoji} *${s.name}*\n   _${s.description.slice(0, 100)}_\n   Events: ${s.events.join(', ')}\n`;
+      idx++;
+    }
   }
+
+  if (others.length > 0) {
+    options += `\n*Other webhook-capable skills:*\n`;
+    for (const s of others) {
+      options += `${idx}. ${s.emoji} *${s.name}*\n   _${s.description.slice(0, 100)}_\n   Events: ${s.events.join(', ')}\n`;
+      idx++;
+    }
+  }
+
+  if (allSkills.length === 0) {
+    options = `_No webhook-capable skills installed._\n`;
+  }
+
+  options += `\n0. 🚫 Ignore / do nothing`;
 
   return `🔗 *Incoming Webhook Received*
 
@@ -110,11 +133,9 @@ function formatWebhookMessage(event) {
 ${bodyPreview}
 \`\`\`
 
-*Available skills to handle this:*
-${skillList}
-${skills.length > 0 ? `\n0. Ignore / do nothing` : ''}
+${options}
 
-Reply with a number or tell me how to handle it.`;
+Reply with a number or tell me what to do.`;
 }
 
 const app = express();
