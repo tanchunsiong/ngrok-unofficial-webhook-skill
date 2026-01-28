@@ -1,0 +1,20 @@
+{
+  "name": "ngrok-unofficial-webhook-skill",
+  "version": "1.0.0",
+  "description": "Ngrok webhook listener — start a public tunnel to receive and process incoming webhooks via the LLM. Routes events to other skills like Zoom RTMS Meeting Assistant.",
+  "author": "tanchunsiong",
+  "license": "MIT",
+  "keywords": [
+    "ngrok",
+    "webhook",
+    "tunnel",
+    "clawdbot"
+  ],
+  "clawdbot": {
+    "emoji": "🔗",
+    "requires": {
+      "env": ["NGROK_AUTHTOKEN"],
+      "bins": ["node"]
+    }
+  }
+}
