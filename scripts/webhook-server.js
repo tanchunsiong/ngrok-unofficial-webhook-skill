@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Ngrok webhook listener — starts an Express server behind an ngrok tunnel.
-// Incoming webhooks are forwarded to the Clawdbot agent for the LLM to decide what to do.
+// Incoming webhooks are forwarded to the OpenClaw agent for the LLM to decide what to do.
 
 import express from 'express';
 import ngrok from '@ngrok/ngrok';
@@ -19,9 +19,9 @@ const PORT = parseInt(process.env.WEBHOOK_PORT || '4040');
 const NGROK_AUTHTOKEN = process.env.NGROK_AUTHTOKEN;
 const NGROK_DOMAIN = process.env.NGROK_DOMAIN || '';
 const WEBHOOK_PATH = process.env.WEBHOOK_PATH || '/webhook';
-const CLAWDBOT_BIN = process.env.CLAWDBOT_BIN || 'clawdbot';
-const NOTIFY_CHANNEL = process.env.CLAWDBOT_NOTIFY_CHANNEL || 'whatsapp';
-const NOTIFY_TARGET = process.env.CLAWDBOT_NOTIFY_TARGET || '';
+const OPENCLAW_BIN = process.env.OPENCLAW_BIN || 'openclaw';
+const NOTIFY_CHANNEL = process.env.OPENCLAW_NOTIFY_CHANNEL || 'whatsapp';
+const NOTIFY_TARGET = process.env.OPENCLAW_NOTIFY_TARGET || '';
 
 if (!NGROK_AUTHTOKEN) {
   console.error('ERROR: NGROK_AUTHTOKEN is required. Set it in .env or environment.');
@@ -29,15 +29,15 @@ if (!NGROK_AUTHTOKEN) {
 }
 
 /**
- * Send a message to the user via Clawdbot CLI.
+ * Send a message to the user via OpenClaw CLI.
  */
 function notifyUser(message) {
   if (!NOTIFY_TARGET) {
-    console.error('⚠️ CLAWDBOT_NOTIFY_TARGET not set — skipping notification.');
+    console.error('⚠️ OPENCLAW_NOTIFY_TARGET not set — skipping notification.');
     return;
   }
   const args = ['message', 'send', '--channel', NOTIFY_CHANNEL, '--target', NOTIFY_TARGET, '--message', message];
-  execFile(CLAWDBOT_BIN, args, { timeout: 30000 }, (err) => {
+  execFile(OPENCLAW_BIN, args, { timeout: 30000 }, (err) => {
     if (err) {
       console.error('❌ Failed to notify user:', err.message);
     } else {
@@ -48,7 +48,7 @@ function notifyUser(message) {
 
 /**
  * Discover installed skills that can handle webhooks.
- * Looks for skill.json with clawdbot.webhookEvents array.
+ * Looks for skill.json with openclaw.webhookEvents array.
  * Returns array of { name, description, folder, events }.
  */
 function discoverWebhookSkills() {
@@ -65,18 +65,20 @@ function discoverWebhookSkills() {
 
       try {
         const skillJson = JSON.parse(readFileSync(skillJsonPath, 'utf-8'));
-        const webhookEvents = skillJson.clawdbot?.webhookEvents;
+        // Check openclaw first, fall back to clawdbot for backward compatibility
+        const skillConfig = skillJson.openclaw || skillJson.clawdbot;
+        const webhookEvents = skillConfig?.webhookEvents;
         if (!webhookEvents || !Array.isArray(webhookEvents) || webhookEvents.length === 0) continue;
 
         skills.push({
           name: skillJson.name || entry.name,
           description: skillJson.description || '',
           folder: entry.name,
-          emoji: skillJson.clawdbot?.emoji || '📦',
+          emoji: skillConfig?.emoji || '📦',
           events: webhookEvents,
-          forwardPort: skillJson.clawdbot?.forwardPort || null,
-          forwardPath: skillJson.clawdbot?.forwardPath || '/',
-          webhookCommands: skillJson.clawdbot?.webhookCommands || null,
+          forwardPort: skillConfig?.forwardPort || null,
+          forwardPath: skillConfig?.forwardPath || '/',
+          webhookCommands: skillConfig?.webhookCommands || null,
         });
       } catch { /* skip malformed skill.json */ }
     }

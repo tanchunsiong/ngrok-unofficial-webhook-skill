@@ -10,10 +10,10 @@
     "webhook",
     "tunnel",
     "auto-routing",
-    "clawdbot",
+    "openclaw",
     "notification"
   ],
-  "clawdbot": {
+  "openclaw": {
     "emoji": "🔗",
     "requires": {
       "env": ["NGROK_AUTHTOKEN"],
@@ -21,8 +21,8 @@
         "NGROK_DOMAIN",
         "WEBHOOK_PORT",
         "WEBHOOK_PATH",
-        "CLAWDBOT_NOTIFY_CHANNEL",
-        "CLAWDBOT_NOTIFY_TARGET"
+        "OPENCLAW_NOTIFY_CHANNEL",
+        "OPENCLAW_NOTIFY_TARGET"
       ],
       "bins": ["node"]
     }

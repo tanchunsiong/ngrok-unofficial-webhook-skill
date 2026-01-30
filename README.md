@@ -4,6 +4,8 @@ Start a public webhook endpoint via ngrok to receive incoming webhooks from any 
 
 > **Unofficial** — This skill is not affiliated with or endorsed by ngrok.
 
+> **Requires [OpenClaw](https://github.com/openclaw/openclaw)** — This skill uses the OpenClaw CLI for notifications.
+
 ## Features
 
 - **Public webhook URL** — Instant ngrok tunnel with optional static domain
@@ -29,7 +31,7 @@ Copy `.env.example` to `.env` and fill in:
 ```env
 NGROK_AUTHTOKEN=your_ngrok_auth_token
 NGROK_DOMAIN=your-static-domain.ngrok-free.app
-CLAWDBOT_NOTIFY_TARGET=+1234567890
+OPENCLAW_NOTIFY_TARGET=+1234567890
 ```
 
 Get your auth token from https://dashboard.ngrok.com
@@ -63,7 +65,7 @@ Skills opt into webhook handling by declaring events in their `skill.json`:
 
 ```json
 {
-  "clawdbot": {
+  "openclaw": {
     "webhookEvents": ["meeting.rtms_started", "meeting.rtms_stopped"],
     "forwardPort": 4048,
     "forwardPath": "/"
@@ -75,7 +77,7 @@ For command-based handling (no running service needed):
 
 ```json
 {
-  "clawdbot": {
+  "openclaw": {
     "webhookEvents": ["recording.completed"],
     "webhookCommands": {
       "recording.completed": {
@@ -96,9 +98,9 @@ For command-based handling (no running service needed):
 | `NGROK_DOMAIN` | — | random | Static ngrok domain for consistent URLs |
 | `WEBHOOK_PORT` | — | `4040` | Local server port |
 | `WEBHOOK_PATH` | — | `/webhook` | Webhook endpoint path |
-| `CLAWDBOT_BIN` | — | `clawdbot` | Path to Clawdbot binary |
-| `CLAWDBOT_NOTIFY_CHANNEL` | — | `whatsapp` | Notification channel |
-| `CLAWDBOT_NOTIFY_TARGET` | — | — | Phone number / target for notifications |
+| `OPENCLAW_BIN` | — | `openclaw` | Path to OpenClaw binary |
+| `OPENCLAW_NOTIFY_CHANNEL` | — | `whatsapp` | Notification channel |
+| `OPENCLAW_NOTIFY_TARGET` | — | — | Phone number / target for notifications |
 
 ## API Endpoints
 

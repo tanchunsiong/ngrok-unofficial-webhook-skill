@@ -25,9 +25,9 @@ Set in the skill's `.env` file (copy from `.env.example`).
 - `NGROK_DOMAIN` — stable ngrok domain for consistent URLs
 - `WEBHOOK_PORT` — local port (default: `4040`)
 - `WEBHOOK_PATH` — webhook path (default: `/webhook`)
-- `CLAWDBOT_BIN` — path to clawdbot binary (default: `clawdbot`)
-- `CLAWDBOT_NOTIFY_CHANNEL` — notification channel (default: `whatsapp`)
-- `CLAWDBOT_NOTIFY_TARGET` — phone number / target for notifications
+- `OPENCLAW_BIN` — path to openclaw binary (default: `openclaw`)
+- `OPENCLAW_NOTIFY_CHANNEL` — notification channel (default: `whatsapp`)
+- `OPENCLAW_NOTIFY_TARGET` — phone number / target for notifications
 
 ## Usage
 
@@ -68,7 +68,7 @@ Skills opt into webhook handling by adding `webhookEvents` to their `skill.json`
 
 ```json
 {
-  "clawdbot": {
+  "openclaw": {
     "webhookEvents": ["meeting.rtms_started", "meeting.rtms_stopped"],
     "forwardPort": 4048,
     "forwardPath": "/"
@@ -80,7 +80,7 @@ For command-based auto-handling (no running service required):
 
 ```json
 {
-  "clawdbot": {
+  "openclaw": {
     "webhookEvents": ["recording.completed"],
     "webhookCommands": {
       "recording.completed": {
